@@ -1,16 +1,25 @@
+use std::collections::HashMap;
+use std::env;
 use std::fs;
 
 fn main() {
-    println!("Hello, world!");
-    let contents = read_file("./input.txt".to_string());
-    let vec_1 = parse_to_vec(&contents, 0);
-    let vec_2 = parse_to_vec(&contents, 1);
-    let differences = find_differences(vec_1, vec_2);
+    let args: Vec<String> = env::args().collect();
+    let path = &args[1];
+    let contents = read_file(path);
+    let mut vec_1 = parse_to_vec(&contents, 0);
+    let mut vec_2 = parse_to_vec(&contents, 1);
+    let differences = find_differences(&mut vec_1, &mut vec_2);
     println!("Differences: {:?}", differences);
-    println!("Total: {}", calculate_total_distance(differences))
+    println!("Total: {}", calculate_total_distance(differences));
+
+    let map_of_location_id = map_from_vec(vec_2);
+    let similarities = calculate_similarity(&vec_1, &map_of_location_id);
+
+    println!("Similarities: {:?}", similarities);
+    println!("Total: {}", calculate_total_distance(similarities));
 }
 
-fn read_file(filename: String) -> String {
+fn read_file(filename: &str) -> String {
     let contents =
         fs::read_to_string(filename).expect("Should have been able to read the input file");
     contents
@@ -32,7 +41,7 @@ fn parse_to_vec(contents: &str, column: usize) -> Vec<i32> {
     numbers
 }
 
-fn find_differences(mut vec_1: Vec<i32>, mut vec_2: Vec<i32>) -> Vec<i32> {
+fn find_differences(vec_1: &mut Vec<i32>, vec_2: &mut Vec<i32>) -> Vec<i32> {
     let mut differences = Vec::new();
     vec_1.sort();
     vec_2.sort();
@@ -54,4 +63,29 @@ fn calculate_total_distance(differences: Vec<i32>) -> i32 {
     }
 
     total_difference
+}
+
+fn map_from_vec(values: Vec<i32>) -> HashMap<i32, i32> {
+    let mut occurances: HashMap<i32, i32> = HashMap::new();
+    for value in values {
+        if occurances.contains_key(&value) {
+            let count: &i32 = occurances.get(&value).expect("Should be a valid value");
+            let new_count: i32 = count + 1;
+            occurances.insert(value, new_count);
+        } else {
+            occurances.insert(value, 1);
+        }
+    }
+    occurances
+}
+
+fn calculate_similarity(values: &Vec<i32>, occurances: &HashMap<i32, i32>) -> Vec<i32> {
+    let mut similarities = Vec::new();
+    for value in values {
+        if occurances.contains_key(&value) {
+            let similarity = value * occurances.get(&value).expect("Should contain a value");
+            similarities.push(similarity);
+        }
+    }
+    similarities
 }
